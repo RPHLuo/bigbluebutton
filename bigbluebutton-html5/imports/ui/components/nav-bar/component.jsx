@@ -116,7 +116,7 @@ class NavBar extends Component {
       presentationTitle,
     } = this.props;
 
-    if (isBreakoutRoom || !breakouts.length) {
+    if (!breakouts.length) {
       return (
         <h1 className={styles.presentationTitle}>{presentationTitle}</h1>
       );
@@ -134,7 +134,7 @@ class NavBar extends Component {
         <DropdownContent
           placement="bottom">
           <DropdownList>
-            {breakouts.map(breakout => this.renderBreakoutItem(breakout))}
+            {breakouts.map(breakout => this.renderItem(breakout))}
           </DropdownList>
         </DropdownContent>
       </Dropdown>
@@ -163,6 +163,35 @@ class NavBar extends Component {
     if (!breakouts.length && this.state.didSendBreakoutInvite) {
       this.setState({ didSendBreakoutInvite: false });
     }
+  }
+
+  renderItem(breakout) {
+    const {
+      isBreakoutRoom,
+    } = this.props;
+    if (isBreakoutRoom) {
+      return this.renderMainRoomItem('');
+    }else {
+      return this.renderBreakoutItem(breakout);
+    }
+  }
+
+  renderMainRoomItem(mainURL) {
+    const {
+      getBreakoutJoinURL,
+      mountModal,
+    } = this.props;
+
+    const roomName = 'Main Room';
+
+    return (
+      <DropdownListItem
+        className={styles.actionsHeader}
+        key={_.uniqueId('action-header')}
+        label={roomName}
+        onClick={openBreakoutJoinConfirmation.bind(this, mainURL, roomName, mountModal)}
+      />
+    );
   }
 
   renderBreakoutItem(breakout) {
