@@ -1,4 +1,5 @@
-import React, { Component, PropTypes, cloneElement } from 'react';
+import React, { Component, cloneElement } from 'react';
+import PropTypes from 'prop-types';
 import { createContainer } from 'meteor/react-meteor-data';
 import { withRouter } from 'react-router';
 import { defineMessages, injectIntl } from 'react-intl';
@@ -6,6 +7,7 @@ import { defineMessages, injectIntl } from 'react-intl';
 import {
   getFontSize,
   getCaptionsStatus,
+  meetingIsBreakout,
 } from './service';
 
 import { withModalMounter } from '../modal/service';
@@ -37,7 +39,7 @@ const intlMessages = defineMessages({
 class AppContainer extends Component {
   render() {
     // inject location on the navbar container
-    let navbarWithLocation = cloneElement(this.props.navbar, { location: this.props.location });
+    const navbarWithLocation = cloneElement(this.props.navbar, { location: this.props.location });
 
     return (
       <App {...this.props} navbar={navbarWithLocation}>
@@ -45,36 +47,51 @@ class AppContainer extends Component {
       </App>
     );
   }
-};
+}
 
 export default withRouter(injectIntl(withModalMounter(createContainer((
   { router, intl, mountModal, baseControls }) => {
     // Check if user is kicked out of the session
-    Users.find({ userId: Auth.userID }).observeChanges({
-      changed(id, fields) {
-        if (fields.user && fields.user.kicked) {
-          Auth.clearCredentials()
+  Users.find({ userId: Auth.userID }).observeChanges({
+    changed(id, fields) {
+      if (fields.user && fields.user.kicked) {
+        Auth.clearCredentials()
             .then(() => {
               router.push('/error/403');
               baseControls.updateErrorState(
                 intl.formatMessage(intlMessages.kickedMessage),
               );
             });
-        }
-      },
-    });
+      }
+    },
+  });
 
     // Close the widow when the current breakout room ends
-    Breakouts.find({ breakoutMeetingId: Auth.meetingID }).observeChanges({
-      removed(old) {
-        Auth.clearCredentials().then(window.close);
-      },
-    });
+  Breakouts.find({ breakoutMeetingId: Auth.meetingID }).observeChanges({
+    removed(old) {
+      Auth.clearCredentials().then(window.close);
+    },
+  });
 
-    return {
-      closedCaption: getCaptionsStatus() ? <ClosedCaptionsContainer /> : null,
-      fontSize: getFontSize(),
+  if((window.navigator.userAgent === 'BigBlueButton') && !meetingIsBreakout()) {
+    const messageToSwift = {
+      method: 'mainRoomUrl',
+      url: [
+        window.location.origin,
+        'html5client/join',
+        Auth.meetingID,
+        Auth.userID,
+        Auth.token,
+      ].join('/'),
     };
-  }, AppContainer))));
+
+    window.webkit.messageHandlers.bbb.postMessage(JSON.stringify(messageToSwift));
+  }
+
+  return {
+    closedCaption: getCaptionsStatus() ? <ClosedCaptionsContainer /> : null,
+    fontSize: getFontSize(),
+  };
+}, AppContainer))));
 
 AppContainer.defaultProps = defaultProps;

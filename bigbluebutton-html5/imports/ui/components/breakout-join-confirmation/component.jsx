@@ -46,14 +46,18 @@ class BreakoutJoinConfirmation extends Component {
 
     // leave main room's audio when joining a breakout room
     AudioService.exitAudio();
-    if(breakoutURL) {
+    if (breakoutURL) {
       if(window.navigator.userAgent === 'BigBlueButton') {
-        window.webkit.messageHandlers.bbb.postMessage(JSON.stringify({method: 'mainRoomUrl:'+'https://www.google.ca'}));
+        window.location = breakoutURL;
+      }else {
+        window.open(breakoutURL);
       }
-      window.location = breakoutURL;
-    }else {
+    } else {
       if(window.navigator.userAgent === 'BigBlueButton') {
-        window.webkit.messageHandlers.bbb.postMessage(JSON.stringify({method: 'setWebviewLocation'}));
+        const messageToSwift = {
+          method: 'setWebviewLocation',
+        };
+        window.webkit.messageHandlers.bbb.postMessage(JSON.stringify(messageToSwift));
       }
     }
     mountModal(null);
@@ -72,11 +76,12 @@ class BreakoutJoinConfirmation extends Component {
         dismiss={{
           label: intl.formatMessage(intlMessages.dismissLabel),
           description: intl.formatMessage(intlMessages.dismissDesc),
-        }}>
+        }}
+      >
         {`${intl.formatMessage(intlMessages.message)} ${breakoutName}?`}
       </Modal>
     );
   }
-};
+}
 
 export default withModalMounter(injectIntl(BreakoutJoinConfirmation));
