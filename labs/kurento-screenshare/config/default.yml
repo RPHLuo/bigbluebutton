@@ -1,7 +1,7 @@
-kurentoUrl: "KURENTOURL"
-kurentoIp: "KURENTOIP"
-localIpAddress: "HOST"
-acceptSelfSignedCertificate: false
+kurentoUrl: "http://127.0.0.1:3008/kurento-screenshare"
+kurentoIp: "192.168.23.11"
+localIpAddress: "192.168.23.11"
+acceptSelfSignedCertificate: true
 redisHost : "127.0.0.1"
 redisPort : "6379"
 minVideoPort: 30000
