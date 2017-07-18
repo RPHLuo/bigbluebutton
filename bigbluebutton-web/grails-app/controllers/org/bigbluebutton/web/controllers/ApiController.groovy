@@ -253,11 +253,14 @@ class ApiController {
       errors.missingParamError("checksum");
     }
 
-    String guest;
-    if (!StringUtils.isEmpty(params.guest) && params.guest.equalsIgnoreCase("true")) {
-        guest = "true";
-    } else {
-        guest = "false";
+    Boolean guest = false;
+    if (!StringUtils.isEmpty(params.guest)) {
+      guest = Boolean.parseBoolean(params.guest)
+    }
+
+    Boolean authenticated = false;
+    if (!StringUtils.isEmpty(params.auth)) {
+      authenticated = Boolean.parseBoolean(params.auth)
     }
 
     // Do we have a name for the user joining? If none, complain.
@@ -373,9 +376,12 @@ class ApiController {
 
     boolean redirectImm = parseBoolean(params.redirectImmediately)
 
-    String internalUserID = RandomStringUtils.randomAlphanumeric(12).toLowerCase()
+    // We preprend "w_" to our internal meeting Id to indicate that this is a web user.
+    // For users joining using the phone, we will prepend "v_" so it will be easier
+    // to distinguish users who doesn't have a web client. (ralam june 12, 2017)
+    String internalUserID = "w_" + RandomStringUtils.randomAlphanumeric(12).toLowerCase()
 
-    String authToken = RandomStringUtils.randomAlphanumeric(12).toLowerCase()
+    String authToken =  RandomStringUtils.randomAlphanumeric(12).toLowerCase()
 
     String sessionToken = RandomStringUtils.randomAlphanumeric(16).toLowerCase()
 
@@ -451,6 +457,7 @@ class ApiController {
     us.record = meeting.isRecord()
     us.welcome = meeting.getWelcomeMessage()
     us.guest = guest
+    us.authed = authenticated
     us.logoutUrl = meeting.getLogoutUrl();
     us.configXML = configxml;
 
@@ -468,7 +475,8 @@ class ApiController {
     meetingService.addUserSession(sessionToken, us);
 
     // Register user into the meeting.
-    meetingService.registerUser(us.meetingID, us.internalUserId, us.fullname, us.role, us.externUserID, us.authToken, us.avatarURL, us.guest)
+    meetingService.registerUser(us.meetingID, us.internalUserId, us.fullname, us.role, us.externUserID,
+            us.authToken, us.avatarURL, us.guest, us.authed)
 
     // Validate if the maxParticipants limit has been reached based on registeredUsers. If so, complain.
     // when maxUsers is set to 0, the validation is ignored
@@ -525,6 +533,7 @@ class ApiController {
               meeting_id() { mkp.yield(us.meetingID) }
               user_id(us.internalUserId)
               auth_token(us.authToken)
+              session_token(session[sessionToken])
             }
           }
         }
@@ -1264,17 +1273,13 @@ class ApiController {
     UserSession us = null;
     Meeting meeting = null;
 
-    if (!session[sessionToken]) {
+    if (meetingService.getUserSession(sessionToken) == null)
       reject = true;
-    } else {
-      if (meetingService.getUserSession(sessionToken) == null)
-        reject = true;
-      else {
-        us = meetingService.getUserSession(sessionToken);
-        meeting = meetingService.getMeeting(us.meetingID);
-        if (meeting == null || meeting.isForciblyEnded()) {
-          reject = true
-        }
+    else {
+      us = meetingService.getUserSession(sessionToken);
+      meeting = meetingService.getMeeting(us.meetingID);
+      if (meeting == null || meeting.isForciblyEnded()) {
+        reject = true
       }
     }
 
@@ -1308,7 +1313,7 @@ class ApiController {
       // removing the user when the user reconnects after being disconnected. (ralam jan 22, 2015)
       // We use underscore (_) to associate userid with the user. We are also able to track
       // how many times a user reconnects or refresh the browser.
-      String newInternalUserID = us.internalUserId + "_" + us.incrementConnectionNum()
+      String newInternalUserID = us.internalUserId //+ "_" + us.incrementConnectionNum()
 
       Map<String, Object> logData = new HashMap<String, Object>();
       logData.put("meetingId", us.meetingID);

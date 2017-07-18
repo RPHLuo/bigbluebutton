@@ -18,12 +18,9 @@
 */
 package org.bigbluebutton.red5.service;
 
-import org.slf4j.Logger;
 import org.bigbluebutton.red5.pubsub.MessagePublisher;
-import org.red5.logging.Red5LoggerFactory;
 
 public class PresentationApplication {
-	private static Logger log = Red5LoggerFactory.getLogger( PresentationApplication.class, "bigbluebutton" );
 
 	private MessagePublisher red5BBBInGW;
 
@@ -75,11 +72,6 @@ public class PresentationApplication {
 		String replyTo = meetingID + "/" + requesterID; 
 
 		red5BBBInGW.getPresentationInfo(meetingID, requesterID, replyTo);
-	}
-
-	public void sendCursorUpdate(String meetingID, Double xPercent, Double yPercent) {	
-
-		red5BBBInGW.sendCursorUpdate(meetingID, xPercent, yPercent);
 	}
 
 	public void resizeAndMoveSlide(String meetingID, Double xOffset, Double yOffset, Double widthRatio, Double heightRatio) {

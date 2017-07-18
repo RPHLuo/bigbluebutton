@@ -1,19 +1,18 @@
 package org.bigbluebutton.core.pubsub.senders
 
+import scala.collection.JavaConverters._
+
+import org.bigbluebutton.common2.domain.UserVO
 import org.bigbluebutton.core.api._
-import org.bigbluebutton.common.messages.MessagingConstants
 import org.bigbluebutton.core.messaging.Util
-import com.google.gson.Gson
-import org.bigbluebutton.core.api.UserVO
-import collection.JavaConverters._
-import scala.collection.JavaConversions._
+import org.bigbluebutton.core.models.RegisteredUser
 
 object UsersMessageToJsonConverter {
   private def userToMap(user: UserVO): java.util.Map[String, Any] = {
 
     val wuser = new scala.collection.mutable.HashMap[String, Any]
-    wuser += "userid" -> user.userID
-    wuser += "extern_userid" -> user.externUserID
+    wuser += "userid" -> user.id
+    wuser += "extern_userid" -> user.externalId
     wuser += "name" -> user.name
     wuser += "role" -> user.role.toString()
     wuser += "guest" -> user.guest
@@ -37,9 +36,9 @@ object UsersMessageToJsonConverter {
     vuser += "muted" -> user.voiceUser.muted
     vuser += "talking" -> user.voiceUser.talking
 
-    wuser.put("voiceUser", mapAsJavaMap(vuser))
+    wuser.put("voiceUser", mapAsJavaMapConverter(vuser).asJava)
 
-    mapAsJavaMap(wuser)
+    mapAsJavaMapConverter(wuser).asJava
   }
 
   private def registeredUserToMap(user: RegisteredUser): java.util.Map[String, Any] = {
@@ -53,7 +52,7 @@ object UsersMessageToJsonConverter {
     wuser += "guest" -> user.guest
     wuser += "waiting_for_acceptance" -> user.waitingForAcceptance
 
-    mapAsJavaMap(wuser)
+    mapAsJavaMapConverter(wuser).asJava
   }
 
   private def buildPermissionsHashMap(perms: Permissions): java.util.HashMap[String, java.lang.Boolean] = {
@@ -146,9 +145,9 @@ object UsersMessageToJsonConverter {
     payload.put(Constants.PERMISSIONS, buildPermissionsHashMap(msg.permissions))
 
     val users = new java.util.ArrayList[java.util.Map[String, Any]]
-    msg.applyTo.foreach(uvo => {
-      users.add(userToMap(uvo))
-    })
+    //msg.applyTo.foreach(uvo => {
+    //  users.add(userToMap(uvo))
+    //})
 
     payload.put("users", users)
 
@@ -245,7 +244,7 @@ object UsersMessageToJsonConverter {
 
     val users = new java.util.ArrayList[String];
     msg.applyTo.foreach(uvo => {
-      users.add(uvo.userID)
+      users.add(uvo.id)
     })
 
     payload.put(Constants.USERS, users)

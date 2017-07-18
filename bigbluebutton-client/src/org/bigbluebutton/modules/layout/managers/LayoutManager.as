@@ -21,50 +21,40 @@ package org.bigbluebutton.modules.layout.managers
   import com.asfusion.mate.events.Dispatcher;
   
   import flash.display.DisplayObject;
-  import mx.core.FlexGlobals;
-  import mx.core.IFlexDisplayObject;
-  import mx.managers.PopUpManager;
-  import org.bigbluebutton.util.i18n.ResourceUtil;
   import flash.events.Event;
   import flash.events.EventDispatcher;
   import flash.events.TimerEvent;
   import flash.net.FileReference;
-  import flash.net.URLLoader;
-  import flash.net.URLRequest;
-  import flash.utils.Dictionary;
   import flash.utils.Timer;
   
   import mx.controls.Alert;
-  import mx.events.ResizeEvent;
-  import mx.events.EffectEvent;
+  import mx.core.FlexGlobals;
   import mx.events.CloseEvent;
+  import mx.events.EffectEvent;
+  import mx.events.ResizeEvent;
+  import mx.managers.PopUpManager;
   
   import flexlib.mdi.containers.MDICanvas;
   import flexlib.mdi.containers.MDIWindow;
-  import flexlib.mdi.events.MDIManagerEvent;
-  
+  import flexlib.mdi.events.MDIManagerEvent;  
   import org.as3commons.logging.api.ILogger;
   import org.as3commons.logging.api.getClassLogger;
   import org.bigbluebutton.common.CustomMdiWindow;
-  import org.bigbluebutton.core.EventBroadcaster;
+  import org.bigbluebutton.core.Options;
   import org.bigbluebutton.core.UsersUtil;
   import org.bigbluebutton.core.events.SwitchedLayoutEvent;
-  import org.bigbluebutton.core.managers.UserManager;
-  import org.bigbluebutton.core.model.Config;
-  import org.bigbluebutton.main.events.ModuleLoadEvent;
-  import org.bigbluebutton.main.model.LayoutOptions;
-  import org.bigbluebutton.modules.layout.events.LayoutFromRemoteEvent;
-  import org.bigbluebutton.main.model.users.BBBUser;
+  import org.bigbluebutton.core.model.LiveMeeting;
+  import org.bigbluebutton.main.model.options.LayoutOptions;
   import org.bigbluebutton.modules.layout.events.LayoutEvent;
+  import org.bigbluebutton.modules.layout.events.LayoutFromRemoteEvent;
   import org.bigbluebutton.modules.layout.events.LayoutLockedEvent;
+  import org.bigbluebutton.modules.layout.events.LayoutNameInUseEvent;
   import org.bigbluebutton.modules.layout.events.LayoutsLoadedEvent;
   import org.bigbluebutton.modules.layout.events.LayoutsReadyEvent;
   import org.bigbluebutton.modules.layout.events.LockLayoutEvent;
   import org.bigbluebutton.modules.layout.events.RemoteSyncLayoutEvent;
-  import org.bigbluebutton.modules.layout.events.LayoutNameInUseEvent;
   import org.bigbluebutton.modules.layout.events.SyncLayoutEvent;
   import org.bigbluebutton.modules.layout.model.LayoutDefinition;
-  import org.bigbluebutton.modules.layout.model.LayoutDefinitionFile;
   import org.bigbluebutton.modules.layout.model.LayoutLoader;
   import org.bigbluebutton.modules.layout.model.LayoutModel;
   import org.bigbluebutton.modules.layout.model.WindowLayout;
@@ -112,7 +102,7 @@ package org.bigbluebutton.modules.layout.managers
 				if (e.success) {
 					_layoutModel.addLayouts(e.layouts);
 
-          broadcastLayouts();
+					broadcastLayouts();
 					_serverLayoutsLoaded = true;
 
 					//trace(LOG + " layouts loaded successfully");
@@ -244,7 +234,7 @@ package org.bigbluebutton.modules.layout.managers
 				}
 				var windows:Array = obj.windows;
 				if (windows != null) {
-					for each (window in windows) {
+					for each (var window:MDIWindow in windows) {
 						LOGGER.debug(e.type + "/" + obj.mdiEventType + " on window " + WindowLayout.getType(window));
 						onActionOverWindowFinished(window);
 					}
@@ -253,19 +243,14 @@ package org.bigbluebutton.modules.layout.managers
 				}
 			});
 			_canvas.windowManager.addEventListener(MDIManagerEvent.WINDOW_ADD, function(e:MDIManagerEvent):void {
-				e.window.callLater(function():void {
-					checkSingleWindowPermissions(e.window);
-					LOGGER.debug("applying layout to just created window " + WindowLayout.getType(e.window));
-					applyLayout(_currentLayout);
-				});
+				checkSingleWindowPermissions(e.window);
+				LOGGER.debug("applying layout to just created window " + WindowLayout.getType(e.window));
+				applyLayout(_currentLayout);
 			});
 			
 			_canvas.windowManager.addEventListener(MDIManagerEvent.WINDOW_FOCUS_START, function(e:MDIManagerEvent):void {
 				OrderManager.getInstance().bringToFront(e.window);
 			});
-			for each (var window:MDIWindow in _canvas.windowManager.windowList.reverse()) {
-				OrderManager.getInstance().bringToFront(window);
-			}
 		}
 
     public function switchToLayout(name:String):void {
@@ -278,11 +263,10 @@ package org.bigbluebutton.modules.layout.managers
     }
     
 		public function applyDefaultLayout():void {         
-      var layoutOptions:LayoutOptions = new LayoutOptions();
-      layoutOptions.parseOptions();
+      var layoutOptions:LayoutOptions = Options.getOptions(LayoutOptions) as LayoutOptions;
       var defaultLayout:LayoutDefinition = _layoutModel.getLayout(layoutOptions.defaultLayout);
            
-      var sessionDefaulLayout:String = UserManager.getInstance().getConference().getDefaultLayout();
+      var sessionDefaulLayout:String = UsersUtil.getDefaultLayout();
             
       if (sessionDefaulLayout != "NOLAYOUT") {
         var sesLayout:LayoutDefinition = _layoutModel.getLayout(sessionDefaulLayout);
@@ -346,7 +330,7 @@ package org.bigbluebutton.modules.layout.managers
 					detectContainerChange = true;
 				});
 				dispatchSwitchedLayoutEvent(layout.name);
-				UserManager.getInstance().getConference().numAdditionalSharedNotes = layout.numAdditionalSharedNotes;
+				LiveMeeting.inst().sharedNotes.numAdditionalSharedNotes = layout.numAdditionalSharedNotes;
 			} else {
 				detectContainerChange = true;
 			}
@@ -374,13 +358,12 @@ package org.bigbluebutton.modules.layout.managers
     
     public function handleLayoutLockedEvent(e: LayoutLockedEvent):void {
       _locked = e.locked;
-      checkWindowsPermissions();
+      checkPermissionsOverAllWindows();
     }
 
     public function lockSettingsChanged():void {
-      var myUser:BBBUser = UserManager.getInstance().getConference().getMyUser();
-      _locked = myUser.lockedLayout;
-      checkWindowsPermissions();
+      _locked = LiveMeeting.inst().me.lockedLayout;
+      checkPermissionsOverAllWindows();
     }
     
 		public function applyRemoteLayout(e:LayoutFromRemoteEvent):void {
@@ -392,22 +375,32 @@ package org.bigbluebutton.modules.layout.managers
 		public function remoteLockLayout():void {
 			//trace(LOG + " remote lock received");
 			_locked = true;
-			checkWindowsPermissions();
+			checkPermissionsOverAllWindows();
 		}
 		
     public function remoteSyncLayout(event:RemoteSyncLayoutEvent):void {
-      checkWindowsPermissions();
+      //trace(LOG + " remote lock received");
+      
+      checkPermissionsOverAllWindows();
     }
     
 		public function remoteUnlockLayout():void {
 			//trace(LOG + " remote unlock received");
 			_locked = false;
-			checkWindowsPermissions();
+			checkPermissionsOverAllWindows();
 		}
 		
-		private function checkWindowsPermissions():void {
+		private function checkPermissionsOverWindow(window:MDIWindow):void {
+			if (UsersUtil.amIModerator()) return;
+			if (window != null && !LayoutDefinition.ignoreWindow(window)) {
+				(window as CustomMdiWindow).unlocked = !_locked;
+			}
+		}
+
+		private function checkPermissionsOverAllWindows():void {
+			if (UsersUtil.amIModerator()) return;
 			for each (var window:MDIWindow in _canvas.windowManager.windowList) {
-				checkSingleWindowPermissions(window);
+				checkPermissionsOverWindow(window);
 			}
 		}
 

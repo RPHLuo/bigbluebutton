@@ -3,13 +3,13 @@ package org.bigbluebutton.red5.pubsub;
 import java.util.Map;
 
 import org.bigbluebutton.common.messages.*;
-import org.bigbluebutton.red5.pubsub.redis.MessageSender;
+import org.bigbluebutton.client.IClientInGW;
 
 public class MessagePublisher {
 
-	private MessageSender sender;
+	private IClientInGW sender;
 	
-	public void setMessageSender(MessageSender sender) {
+	public void setMessageSender(IClientInGW sender) {
 		this.sender = sender;
 	}
 	
@@ -180,11 +180,6 @@ public class MessagePublisher {
 
 	}
 
-	public void sendCursorUpdate(String meetingID, double xPercent, double yPercent) {
-		SendCursorUpdateMessage msg = new SendCursorUpdateMessage(meetingID, xPercent, yPercent);
-		sender.send(MessagingConstants.TO_PRESENTATION_CHANNEL, msg.toJson());
-	}
-
 	public void resizeAndMoveSlide(String meetingID, double xOffset, double yOffset, double widthRatio, double heightRatio) {
 		ResizeAndMoveSlideMessage msg = new ResizeAndMoveSlideMessage(meetingID, xOffset, yOffset, widthRatio, heightRatio);
 		sender.send(MessagingConstants.TO_PRESENTATION_CHANNEL, msg.toJson());
@@ -238,59 +233,9 @@ public class MessagePublisher {
 		sender.send(MessagingConstants.TO_USERS_CHANNEL, msg.toJson());
 	}
 
-	public void getChatHistory(String meetingID, String requesterID, String replyTo) {
-		GetChatHistoryRequestMessage msg = new GetChatHistoryRequestMessage(meetingID, requesterID, replyTo);
-		sender.send(MessagingConstants.TO_CHAT_CHANNEL, msg.toJson());
-	}
-
-	public void clearPublicChatMessages(String meetingID, String requesterID) {
-		ClearPublicChatHistoryRequestMessage msg = new ClearPublicChatHistoryRequestMessage(meetingID, requesterID);
-		sender.send(MessagingConstants.TO_CHAT_CHANNEL, msg.toJson());
-	}
-
-	public void sendPublicMessage(String meetingID, String requesterID, Map<String, String> message) {
-		SendPublicChatMessage msg = new SendPublicChatMessage(meetingID, requesterID, message);
-		sender.send(MessagingConstants.TO_CHAT_CHANNEL, msg.toJson());
-	}
-
-	public void sendPrivateMessage(String meetingID, String requesterID, Map<String, String> message) {
-		SendPrivateChatMessage msg = new SendPrivateChatMessage(meetingID, requesterID, message);
-		sender.send(MessagingConstants.TO_CHAT_CHANNEL, msg.toJson());
-	}
-
 	public void requestDeskShareInfo(String meetingID, String requesterID, String replyTo) {
 		DeskShareGetInfoRequestMessage msg = new DeskShareGetInfoRequestMessage(meetingID, requesterID, replyTo);
 		sender.send(MessagingConstants.FROM_VOICE_CONF_SYSTEM_CHAN, msg.toJson());
-	}
-	public void sendWhiteboardAnnotation(String meetingID, String requesterID, Map<String, Object> annotation) {
-		SendWhiteboardAnnotationRequestMessage msg = new SendWhiteboardAnnotationRequestMessage(meetingID, requesterID, annotation);
-		sender.send(MessagingConstants.TO_WHITEBOARD_CHANNEL, msg.toJson());
-	}
-
-	public void requestWhiteboardAnnotationHistory(String meetingID, String requesterID, String whiteboardId, String replyTo) {
-		RequestWhiteboardAnnotationHistoryRequestMessage msg = new RequestWhiteboardAnnotationHistoryRequestMessage(meetingID, requesterID, whiteboardId, replyTo);
-		sender.send(MessagingConstants.TO_WHITEBOARD_CHANNEL, msg.toJson());
-
-	}
-
-	public void clearWhiteboard(String meetingID, String requesterID, String whiteboardId) {
-		ClearWhiteboardRequestMessage msg = new ClearWhiteboardRequestMessage(meetingID, requesterID, whiteboardId);
-		sender.send(MessagingConstants.TO_WHITEBOARD_CHANNEL, msg.toJson());
-	}
-
-	public void undoWhiteboard(String meetingID, String requesterID, String whiteboardId) {
-		org.bigbluebutton.common.messages.UndoWhiteboardRequest msg = new org.bigbluebutton.common.messages.UndoWhiteboardRequest(meetingID, requesterID, whiteboardId);
-		sender.send(MessagingConstants.TO_WHITEBOARD_CHANNEL, msg.toJson());
-	}
-
-	public void enableWhiteboard(String meetingID, String requesterID, Boolean enable) {
-		EnableWhiteboardRequestMessage msg = new EnableWhiteboardRequestMessage(meetingID, requesterID, enable);
-		sender.send(MessagingConstants.TO_WHITEBOARD_CHANNEL, msg.toJson());
-	}
-
-	public void isWhiteboardEnabled(String meetingID, String requesterID, String replyTo) {
-		IsWhiteboardEnabledRequestMessage msg = new IsWhiteboardEnabledRequestMessage(meetingID, requesterID, replyTo);
-		sender.send(MessagingConstants.TO_WHITEBOARD_CHANNEL, msg.toJson());
 	}
 
 	public void lockLayout(String meetingID, String setById, boolean lock, boolean viewersOnly, String layout) {
@@ -317,51 +262,6 @@ public class MessagePublisher {
 
 	public void endAllBreakoutRooms(String jsonMessage) {
 		sender.send(MessagingConstants.TO_USERS_CHANNEL, jsonMessage);
-	}
-	
-	public void sendCaptionHistory(String meetingID, String requesterID) {
-		SendCaptionHistoryRequestMessage msg = new SendCaptionHistoryRequestMessage(meetingID, requesterID);
-		sender.send(MessagingConstants.TO_CAPTION_CHANNEL, msg.toJson());
-	}
-	
-	public void updateCaptionOwner(String meetingID, String locale, String localeCode, String ownerID) {
-		UpdateCaptionOwnerMessage msg = new UpdateCaptionOwnerMessage(meetingID, locale, localeCode, ownerID);
-		sender.send(MessagingConstants.TO_CAPTION_CHANNEL, msg.toJson());
-	}
-	
-	public void editCaptionHistory(String meetingID, String userID, Integer startIndex, Integer endIndex, String locale, String localeCode, String text) {
-		EditCaptionHistoryMessage msg = new EditCaptionHistoryMessage(meetingID, userID, startIndex, endIndex, locale, localeCode, text);
-		sender.send(MessagingConstants.TO_CAPTION_CHANNEL, msg.toJson());
-	}
-
-	public void patchDocument(String meetingID, String requesterID, String noteID, String patch, String operation) {
-		PatchDocumentRequestMessage msg = new PatchDocumentRequestMessage(meetingID, requesterID, noteID, patch, operation);
-		sender.send(MessagingConstants.TO_SHAREDNOTES_CHANNEL, msg.toJson());
-	}
-
-	public void getCurrentDocument(String meetingID, String requesterID) {
-		GetCurrentDocumentRequestMessage msg = new GetCurrentDocumentRequestMessage(meetingID, requesterID);
-		sender.send(MessagingConstants.TO_SHAREDNOTES_CHANNEL, msg.toJson());
-	}
-
-	public void createAdditionalNotes(String meetingID, String requesterID, String noteName) {
-		CreateAdditionalNotesRequestMessage msg = new CreateAdditionalNotesRequestMessage(meetingID, requesterID, noteName);
-		sender.send(MessagingConstants.TO_SHAREDNOTES_CHANNEL, msg.toJson());
-	}
-
-	public void destroyAdditionalNotes(String meetingID, String requesterID, String noteID) {
-		DestroyAdditionalNotesRequestMessage msg = new DestroyAdditionalNotesRequestMessage(meetingID, requesterID, noteID);
-		sender.send(MessagingConstants.TO_SHAREDNOTES_CHANNEL, msg.toJson());
-	}
-
-	public void requestAdditionalNotesSet(String meetingID, String requesterID, int additionalNotesSetSize) {
-		RequestAdditionalNotesSetRequestMessage msg = new RequestAdditionalNotesSetRequestMessage(meetingID, requesterID, additionalNotesSetSize);
-		sender.send(MessagingConstants.TO_SHAREDNOTES_CHANNEL, msg.toJson());
-	}
-
-	public void sharedNotesSyncNoteRequest(String meetingID, String requesterID, String noteID) {
-		SharedNotesSyncNoteRequestMessage msg = new SharedNotesSyncNoteRequestMessage(meetingID, requesterID, noteID);
-		sender.send(MessagingConstants.TO_SHAREDNOTES_CHANNEL, msg.toJson());
 	}
 
 	public void logoutEndMeeting(String meetingId, String userId) {

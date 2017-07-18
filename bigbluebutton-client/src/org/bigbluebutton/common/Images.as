@@ -43,9 +43,6 @@ package org.bigbluebutton.common
     [Embed(source="assets/images/webcam_new_20.png")]
     public var webcam_new_20:Class;
 
-	[Embed(source="assets/images/sound_new.png")]
-	public var sound_new:Class;
-
 	[Embed(source="assets/images/moderator_20db.png")]
 	public var moderator:Class;
 
@@ -67,15 +64,6 @@ package org.bigbluebutton.common
         [Embed(source="assets/images/square.png")]
         public var square_icon:Class;
 
-        [Embed(source="assets/images/undo.png")]
-        public var undo_icon:Class;
-
-        [Embed(source="assets/images/hand.png")]
-        public var hand_icon:Class;
-
-        [Embed(source="assets/images/marker.png")]
-        public var scribble_icon:Class;
-
         [Embed(source="assets/images/text.png")]
         public var text_icon:Class;
 
@@ -91,23 +79,8 @@ package org.bigbluebutton.common
         [Embed(source="assets/images/BBBlogo.png")]
         public var bbb_logo:Class;
 
-        [Embed(source="assets/images/magnifier.png")]
-        public var magnifier:Class;
-
-        [Embed(source="assets/images/magnifier_reset.png")]
-        public var mag_reset:Class;
-
-        [Embed(source="assets/images/control_play_blue.png")]
-        public var control_play:Class;
-
-        [Embed(source="assets/images/shape_move_front.png")]
-        public var layout:Class;
-
 		[Embed(source="assets/images/table.png")]
 		public var table:Class;
-
-		[Embed(source="assets/images/trash.png")]
-		public var delete_icon:Class;
 
         [Embed(source="assets/images/add.png")]
         public var add:Class;
@@ -137,32 +110,8 @@ package org.bigbluebutton.common
 		[Embed(source="assets/images/line.png")]
 		public var line_icon:Class;
 
-//		[Embed(source="assets/images/text_icon.png")]
-//		public var text_icon:Class;
-
-		[Embed(source="assets/images/fill_icon.png")]
-		public var fill_icon:Class;
-
-		[Embed(source="assets/images/transparency_icon.png")]
-		public var transparency_icon:Class;
-
-		[Embed(source="assets/images/eraser.png")]
-		public var eraser_icon:Class;
-
-		[Embed(source="assets/images/highlighter_icon.png")]
-		public var highlighter_icon:Class;
-
-		[Embed(source="assets/images/pointer_icon_small.png")]
-		public var select_icon:Class;
-
 		[Embed(source="assets/images/triangle.png")]
 		public var triangle_icon:Class;
-
-		[Embed(source="assets/images/text_background_icon.png")]
-		public var toggle_text_background_icon:Class;
-
-		[Embed(source="assets/images/grid_icon.png")]
-		public var grid_icon:Class;
 
 		[Embed(source="assets/images/ic_refresh_16px.png")]
 		public var refreshSmall:Class;
