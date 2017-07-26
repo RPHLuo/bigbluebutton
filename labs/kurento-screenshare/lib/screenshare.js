@@ -57,6 +57,53 @@ module.exports = class Screenshare {
     }
   };
 
+  _startViewer(ws, voiceBridge, sdp, presenterEndpoint, callback) {
+    let self = this;
+    let _callback = function(){};
+    ws.sendMessage("received");
+    console.log("VIEWER VOICEBRIDGE:    "+self._voiceBridge);
+    MediaController.createMediaElement(voiceBridge, C.WebRTC, function(error, webRtcEndpoint) {
+      if (error) {
+        console.log("Media elements error" + error);
+	ws.sendMessage("1");
+        return _callback(error);
+      }
+      // QUEUES UP ICE CANDIDATES IF NEGOTIATION IS NOT YET READY
+      while(self._candidatesQueue.length) {
+        let candidate = self._candidatesQueue.shift();
+        MediaController.addIceCandidate(webRtcEndpoint.id, candidate);
+      }
+      // CONNECTS TWO MEDIA ELEMENTS
+      MediaController.connectMediaElements(presenterEndpoint.id, webRtcEndpoint.id, C.VIDEO, function(error) {
+        if (error) {
+          console.log("Media elements CONNECT error " + error);
+          //pipeline.release();
+	  ws.sendMessage("2");
+          return _callback(error);
+        }
+      });
+
+      self._webRtcEndpoint = webRtcEndpoint
+
+      // ICE NEGOTIATION WITH THE ENDPOINT
+      self._webRtcEndpoint.on('OnIceCandidate', function(event) {
+        let candidate = kurento.getComplexType('IceCandidate')(event.candidate);
+        ws.sendMessage({ id : 'iceCandidate', cameraId: id, candidate : candidate });
+      });
+
+      // PROCESS A SDP OFFER
+      MediaController.processOffer(webRtcEndpoint.id, sdp, function(error, webRtcSdpAnswer) {
+        if (error) {
+          console.log("  [webrtc] processOffer error => " + error + " for SDP " + sdp);
+          //pipeline.release();
+          return _callback(error);
+        }
+        ws.sendMessage({id: "sdp", sdp: webRtcSdpAnswer});
+      });
+    });    
+  }
+
+
   _startPresenter(id, ws, sdpOffer, callback) {
     let self = this;
     let _callback = callback;
@@ -64,6 +111,7 @@ module.exports = class Screenshare {
     // Force H264 on Firefox and Chrome
     sdpOffer = h264_sdp.transform(sdpOffer);
     console.log("Starting presenter for " + sdpOffer);
+    console.log("PRESENTER VOICEBRIDGE:   " + self._voiceBridge);
     MediaController.createMediaElement(self._voiceBridge, C.WebRTC, function(error, webRtcEndpoint) {
       if (error) {
         console.log("Media elements error" + error);

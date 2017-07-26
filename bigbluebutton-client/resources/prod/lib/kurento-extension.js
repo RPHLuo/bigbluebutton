@@ -200,7 +200,7 @@ Kurento.prototype.onOfferPresenter = function (error, offerSdp) {
 
   var message = {
     id : 'presenter',
-    presenterId : kurentoHandler.sessid,
+    presenterId : kurentoHandler.voiceBridge,
     callerName : kurentoHandler.caller_id_name,
     voiceBridge : kurentoHandler.destination_number,
     sdpOffer : offerSdp,
@@ -253,7 +253,7 @@ Kurento.prototype.onIceCandidate = function(candidate) {
 
   var message = {
     id : 'onIceCandidate',
-    presenterId : kurentoHandler.sessid,
+    presenterId : kurentoHandler.voiceBridge,
     candidate : candidate
   }
   console.log("this object " + JSON.stringify(this, null, 2));
@@ -294,7 +294,7 @@ Kurento.prototype.onOfferViewer = function (error, offerSdp) {
   }
   var message = {
     id : 'viewer',
-    presenterId : kurentoHandler.sessid,
+    presenterId : kurentoHandler.voiceBridge,
     callerName : kurentoHandler.caller_id_name,
     voiceBridge : kurentoHandler.destination_number,
     sdpOffer : offerSdp
@@ -307,7 +307,7 @@ Kurento.prototype.onOfferViewer = function (error, offerSdp) {
 Kurento.prototype.ping = function() {
    var message = {
     id : 'ping',
-    presenterId : kurentoHandler.sessid,
+    presenterId : kurentoHandler.voiceBridge,
     callerName : kurentoHandler.caller_id_name,
     voiceBridge : kurentoHandler.destination_number,
   };
@@ -319,7 +319,7 @@ Kurento.prototype.stop = function() {
   if (this.webRtcPeer) {
     var message = {
       id : 'stop',
-      presenterId : kurentoHandler.sessId,
+      presenterId : kurentoHandler.voiceBridge,
     }
     kurentoHandler.sendMessage(message);
     kurentoHandler.disposeScreenShare();

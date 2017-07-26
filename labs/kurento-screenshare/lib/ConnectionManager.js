@@ -14,6 +14,7 @@ const wsModule = require('./websocket');
 const http = require('http');
 const fs = require('fs');
 const BigBlueButtonGW = require('./bbb/pubsub/bbb-gw');
+const MediaController = require('./media-controller');
 var Screenshare = require('./screenshare');
 var C = require('./bbb/messages/Constants');
 
@@ -26,6 +27,7 @@ module.exports = class ConnectionManager {
     this._clientId = 0;
     this._app = express();
     this._sessions = {};
+    this._presenters = {};
 
     this._setupExpressSession();
     this._setupHttpServer();
@@ -117,6 +119,11 @@ module.exports = class ConnectionManager {
 
           session = new Screenshare(webSocket, message.presenterId, self._bbbGW, message.voiceBridge, message.callerName, message.vh, message.vw);
 
+	  if (!self._presenters[message.presenterId]) {
+	    self._presenters[message.presenterId] = {}
+	    self._presenters[message.presenterId] = session;
+	  }
+
           //session.on('message', self._assembleSessionMessage.bind(self));
 
           self._sessions[sessionId][message.presenterId] = session;
@@ -171,6 +178,28 @@ module.exports = class ConnectionManager {
           }));
           break;
 
+	case 'ios':
+	  if (message.sdp && message.voiceBridge) {
+	    session = new Screenshare(webSocket, null, null, message.voiceBridge, message.callerName, null, null);
+            if (self._presenters[message.voiceBridge]) {
+	      session._startViewer(webSocket, message.voiceBridge, message.sdp, self._presenters[message.voiceBridge]._webRtcEndpoint);
+	    }else {
+	      webSocket.sendMessage("voiceBridge not recognized");
+	      webSocket.sendMessage(Object.keys(self._presenters));
+	    }
+	  }
+	  break;
+
+	case 'startScreenshareViewer':
+	  if (message.sdp && message.voiceBridge) {
+	    if (session = self._presenters[message.voiceBridge]) {
+	      session._startViewer(webSocket, message.voiceBridge, message.sdp, self._presenters[message.voiceBridge]._webRtcEndpoint);
+	    } else {
+	      webSocket.sendMessage("voiceBridge not recognized");
+	      webSocket.sendMessage(Object.keys(self._presenters));
+	    }
+	  }
+	  break;
         default:
           webSocket.sendMessage({ id : 'error', message : 'Invalid message ' + message });
           break;

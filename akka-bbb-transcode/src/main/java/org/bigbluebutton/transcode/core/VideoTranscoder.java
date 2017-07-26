@@ -310,7 +310,22 @@ public class VideoTranscoder extends UntypedActor implements ProcessMonitorObser
                 ffmpeg.addRtmpOutputConnectionParameter("transcoder-"+transcoderId);
                 ffmpeg.setCodec("copy");
                 ffmpeg.setFormat("flv");
+
+/*
+                ffmpeg.setFormat("flv");                                        
+                ffmpeg.setLoglevel("quiet");                                    
+                ffmpeg.setOutput(outputLive);                                   
+                ffmpeg.addRtmpOutputConnectionParameter(meetingId);             
+                ffmpeg.addRtmpOutputConnectionParameter("transcoder-"+transcoderId);
+                ffmpeg.setCodec("libx264");                                     
+                ffmpeg.setProfile("baseline");                                  
+                ffmpeg.setPreset("ultrafast");                                  
+                ffmpeg.setGop(30);                                              
+                ffmpeg.addCustomParameter("-crf", "20");   
+*/
+
                 command = ffmpeg.getFFmpegCommand(true);
+
                 break;
 
             case TRANSCODE_FILE_TO_RTP:
