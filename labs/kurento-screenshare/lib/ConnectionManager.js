@@ -26,8 +26,9 @@ module.exports = class ConnectionManager {
     this._logger = logger;
     this._clientId = 0;
     this._app = express();
+
     this._sessions = {};
-    this._presenters = {};
+    this._screenshareSessions = {};
 
     this._setupExpressSession();
     this._setupHttpServer();
@@ -78,59 +79,65 @@ module.exports = class ConnectionManager {
 
   _onNewConnection(webSocket) {
     let self = this;
-    let sessionId;
+    let connectionId;
     let request = webSocket.upgradeReq;
+    let sessionId;
     let response = {
       writeHead : {}
     };
 
-    self._sessionHandler(request, response, function(err) {
-      sessionId = request.session.id + "_" + self.clientId++;
-      if (!self._sessions[sessionId]) {
-        self._sessions[sessionId] = {};
-      }
-
-      console.log('Connection received with sessionId ' + sessionId);
+    this._sessionHandler(request, response, function(err) {
+      connectionId = request.session.id + "_" + self._clientId++;
+      console.log('Connection received with connectionId ' + connectionId);
     });
 
     webSocket.on('error', function(error) {
-      console.log('Connection ' + sessionId + ' error');
-      // stop(sessionId);
+      console.log('Connection ' + connectionId + ' error');
+      self._stopSession(sessionId);
     });
 
     webSocket.on('close', function() {
-      console.log('Connection ' + sessionId + ' closed');
+      console.log('Connection ' + connectionId + ' closed');
       self._stopSession(sessionId);
     });
 
     webSocket.on('message', function(_message) {
       let message = JSON.parse(_message);
-
       let session;
+      // The sessionId is voiceBridge for screensharing sessions
+      sessionId = message.voiceBridge;
 
-      if (message.presenterId && self._sessions[sessionId][message.presenterId]) {
-        session = self._sessions[sessionId][message.presenterId];
+      if(self._screenshareSessions[sessionId]) {
+        session = self._screenshareSessions[sessionId];
       }
 
       switch (message.id) {
 
         case 'presenter':
-          console.log('Presenter message => [' + message.id + '] connection [' + sessionId + '][' + message.presenterId + '][' + message.voiceBridge + '][' + message.callerName + ']');
 
-          session = new Screenshare(webSocket, message.presenterId, self._bbbGW, message.voiceBridge, message.callerName, message.vh, message.vw);
+          // Checking if there's already a Screenshare session started
+          // because we shouldn't overwrite it
 
-	  if (!self._presenters[message.presenterId]) {
-	    self._presenters[message.presenterId] = {}
-	    self._presenters[message.presenterId] = session;
+	  if (!self._screenshareSessions[message.voiceBridge]) {
+	    self._screenshareSessions[message.voiceBridge] = {}
+	    self._screenshareSessions[message.voiceBridge] = session;
 	  }
 
           //session.on('message', self._assembleSessionMessage.bind(self));
+          if(session) {
+            break;
+          }
 
-          self._sessions[sessionId][message.presenterId] = session;
+          session = new Screenshare(webSocket, connectionId, self._bbbGW,
+              sessionId, message.callerName, message.vh, message.vw,
+              message.internalMeetingId);
+
+          self._screenshareSessions[sessionId] = {}
+          self._screenshareSessions[sessionId] = session;
 
           // starts presenter by sending sessionID, websocket and sdpoffer
-          session._startPresenter(sessionId, webSocket, message.sdpOffer, function(error, sdpAnswer) {
-            console.log(" Started presenter " + sessionId);
+          session._startPresenter(connectionId, webSocket, message.sdpOffer, function(error, sdpAnswer) {
+            console.log(" Started presenter " + connectionId);
             if (error) {
               return webSocket.send(JSON.stringify({
                 id : 'presenterResponse',
@@ -149,12 +156,12 @@ module.exports = class ConnectionManager {
           break;
 
         case 'viewer':
-          console.log('Viewer message => [' + message.id + '] connection [' + sessionId + '][' + message.presenterId + '][' + message.voiceBridge + '][' + message.callerName + ']');
+          console.log('Viewer message => [' + message.id + '] connection [' + connectionId + '][' + message.presenterId + '][' + message.sessionId + '][' + message.callerName + ']');
 
           break;
         case 'stop':
 
-          console.log('[' + message.id + '] connection ' + sessionId);
+          console.log('[' + message.id + '] connection ' + connectionId);
 
           if (session) {
             session._stop(sessionId);
@@ -177,29 +184,21 @@ module.exports = class ConnectionManager {
             response : 'accepted'
           }));
           break;
-
-	case 'ios':
-	  if (message.sdp && message.voiceBridge) {
-	    session = new Screenshare(webSocket, null, null, message.voiceBridge, message.callerName, null, null);
-            if (self._presenters[message.voiceBridge]) {
-	      session._startViewer(webSocket, message.voiceBridge, message.sdp, self._presenters[message.voiceBridge]._webRtcEndpoint);
-	    }else {
-	      webSocket.sendMessage("voiceBridge not recognized");
-	      webSocket.sendMessage(Object.keys(self._presenters));
-	    }
-	  }
-	  break;
-
 	case 'startScreenshareViewer':
+	  console.log(" Session output => " + session);
 	  if (message.sdp && message.voiceBridge) {
-	    if (session = self._presenters[message.voiceBridge]) {
-	      session._startViewer(webSocket, message.voiceBridge, message.sdp, self._presenters[message.voiceBridge]._webRtcEndpoint);
-	    } else {
-	      webSocket.sendMessage("voiceBridge not recognized");
-	      webSocket.sendMessage(Object.keys(self._presenters));
-	    }
-	  }
-	  break;
+	    if (session) {
+              session._startViewer(webSocket, message.voiceBridge, message.sdp, self._screenshareSessions[message.voiceBridge]._presenterEndpoint);
+            } else {
+              webSocket.sendMessage("voiceBridge not recognized");
+              webSocket.sendMessage(Object.keys(self._screenshareSessions));
+              webSocket.sendMessage(message.voiceBridge);
+            }
+          }
+          break;
+
+
+
         default:
           webSocket.sendMessage({ id : 'error', message : 'Invalid message ' + message });
           break;
@@ -207,27 +206,26 @@ module.exports = class ConnectionManager {
     });
   }
 
-    _stopSession(sessionId) {
-      console.log(' [>] Stopping session ' + sessionId);
-      let sessionIds = Object.keys(this._sessions[sessionId]);
-
-      for (let i = 0; i < sessionIds.length; i++) {
-        let session = this._sessions[sessionId][sessionIds[i]];
+  _stopSession(sessionId) {
+    console.log(' [>] Stopping session ' + sessionId);
+    let session = this._screenshareSessions[sessionId];
+    if(typeof session!== 'undefined') {
+      if(typeof session._stop === 'function') {
         session._stop();
-        delete this._sessions[sessionId][sessionIds[i]];
       }
-
-      delete this._sessions[sessionId];
     }
 
-    _stopAll() {
-      console.log('\n [x] Stopping everything! ');
-      let sessionIds = Object.keys(this._sessions);
-
-      for (let i = 0; i < sessionIds.length; i++) {
-        this._stopSession(sessionIds[i]);
-      }
-
-      setTimeout(process.exit, 1000);
-    }
+    delete this._screenshareSessions[sessionId];
   }
+
+  _stopAll() {
+    console.log('\n [x] Stopping everything! ');
+    let sessionIds = Object.keys(this._screenshareSessions);
+
+    for (let i = 0; i < sessionIds.length; i++) {
+      this._stopSession(sessionIds[i]);
+    }
+
+    setTimeout(process.exit, 1000);
+  }
+}
