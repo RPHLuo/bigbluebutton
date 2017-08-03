@@ -1,36 +1,31 @@
 import Users from '/imports/api/2.0/users';
 import Auth from '/imports/ui/services/auth';
+import AudioManager from '/imports/api/2.0/audio/client/manager';
+import Meetings from '/imports/api/2.0/meetings';
 
-import AudioManager from '/imports/api/1.1/audio/client/manager';
-
-let audioManager;
 const init = () => {
   const userId = Auth.userID;
   const User = Users.findOne({ userId });
-  const username = User.user.name;
+  const username = User.name;
+  const Meeting = Meetings.findOne({ meetingId: User.meetingId });
+  const voiceBridge = Meeting.voiceProp.voiceConf;
 
-  const turns = [];
-  const stuns = [];
   // FIX ME
-  const voiceBridge = 'Meeting.voiceConf';
-  // FIX ME
-  const microphoneLockEnforced = 'Meeting.roomLockSettings.disableMic';
+  const microphoneLockEnforced = false;
 
   const userData = {
     userId,
     username,
-    turns,
-    stuns,
     voiceBridge,
     microphoneLockEnforced,
   };
 
-  audioManager = new AudioManager(userData);
+  AudioManager.init(userData);
 };
 
-const exitAudio = () => audioManager.exitAudio();
-const joinListenOnly = () => audioManager.joinAudio(true);
-const joinMicrophone = () => audioManager.joinAudio(false);
+const exitAudio = () => AudioManager.exitAudio();
+const joinListenOnly = () => AudioManager.joinAudio(true);
+const joinMicrophone = () => AudioManager.joinAudio(false);
 
 export default {
   init,

@@ -1,5 +1,6 @@
 @namespace mx "library://ns.adobe.com/flex/mx";
 @namespace flexlib "http://code.google.com/p/flexlib/";
+@namespace flexlibcontainers "flexlib.mdi.containers.*";
 @namespace users "org.bigbluebutton.modules.users.views.*";
 @namespace poll "org.bigbluebutton.modules.polling.views.*";
 @namespace whiteboard "org.bigbluebutton.modules.whiteboard.views.*";
@@ -36,11 +37,14 @@
 */
 
 global {
-	fontFamily     : "Source Sans Pro", Arial, sans-serif;
-	fontSize       : 13;
-	color          : #2A2D33;
-	selectionColor : #1070D7;
-	focusColor     : #1070D7;
+	fontFamily        : "Source Sans Pro", Arial, sans-serif;
+	fontSize          : 13;
+	color             : #2A2D33;
+	selectionColor    : #1070D7;
+	textSelectedColor : #FFFFFF;
+	focusColor        : #1070D7;
+	rollOverColor     : #0A5EAC;
+	textRollOverColor : #FFFFFF;
 }
 
 .defaultShellStyle {
@@ -270,7 +274,7 @@ mx|ApplicationControlBar {
 }
 
 .muteMeDefaultButtonStyle {
-	glowFilterColor : #B4201B;
+	glowFilterColor : #1070D7;
 	icon            : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Microphone");
 	disabledIcon    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Microphone_Disabled");
 }
@@ -284,30 +288,23 @@ mx|ApplicationControlBar {
 }
 
 .quickWindowLinkStyle {
-	/* FIXME */
 	paddingLeft       : 0;
 	paddingRight      : 0;
 	textDecoration    : underline;
-	rollOverColor     : #CCCCCC;
-	selectionColor    : #999999;
-	color             : #FFFFFF;
-	textRollOverColor : #504F3D;
-	textSelectedColor : #504F3D;
+	rollOverColor     : #1070D7;
+	selectionColor    : #0A5EAC;
+	color             : #4E5A66;
+	textRollOverColor : #FFFFFF;
+	textSelectedColor : #FFFFFF;
 }
 
 .helpLinkButtonStyle {
-	/* FIXME */
-	paddingLeft       : 4;
-	paddingRight      : 4;
-	paddingTop        : 2;
-	paddingBottom     : 2;
-	fontSize          : 16;
-	rollOverColor     : #CCCCCC;
-	selectionColor    : #999999;
-	color             : #FFFFFF;
-	textRollOverColor : #504F3D;
-	textSelectedColor : #504F3D;
-	fontWeight        : bold;
+	cornerRadius   : 2;
+	rollOverColor  : #1070D7;
+	selectionColor : #0A5EAC;
+	icon           : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Help");
+	overIcon       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Help_White");
+	downIcon       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Help_White");
 }
 
 /*
@@ -397,6 +394,10 @@ mx|Button {
 //  Breakout Rooms (FIXME)
 //------------------------------
 */
+
+users|BreakoutRoomSettings {
+	headerHeight : 0;
+}
 
 users|RoomActionsRenderer {
 	paddingLeft     : 5;
@@ -535,8 +536,6 @@ views|ClientStatusItemRenderer {
 mx|ComboBox {
 	cornerRadius        : 2;
 	color               : #5E6C73;
-	textRollOverColor   : #5E6C73;
-	textSelectedColor   : #5E6C73;
 	fontSize            : 12;
 
 	/* Normal state */
@@ -670,13 +669,12 @@ layout|BroadcastButton {
 //------------------------------
 */
 
-.lockSettingsDefaultLabelStyle {
-	fontSize : 14;
+views|LockSettings {
+	headerHeight : 0;
 }
 
-.lockSettingsWindowTitleStyle {
-	fontSize   : 18;
-	fontWeight : bold;
+.lockSettingsDefaultLabelStyle {
+	fontSize : 14;
 }
 
 /*
@@ -715,7 +713,7 @@ flexlib|MDIWindow {
 	/*None of the following properties are overridden by the MDIWindow class*/
 	backgroundSize       : "100%";
 
-	headerHeight         : 40;
+	headerHeight         : 30;
 
 	cornerRadius         : 4;
 	dropShadowEnabled    : false;
@@ -741,6 +739,11 @@ flexlib|MDIWindow {
 	showHeaderSeparator  : true;
 }
 
+flexlibcontainers|MDIWindowControlsContainer {
+	paddingRight  : 12;
+	horizontalGap : 12;
+}
+
 .mdiMaximizeButtonStyle {
 	upSkin       : Embed(source="assets/swf/v2_skin.swf", symbol="MDI_Button_Maximize_Up");
 	overSkin     : Embed(source="assets/swf/v2_skin.swf", symbol="MDI_Button_Maximize_Over");
@@ -756,8 +759,10 @@ flexlib|MDIWindow {
 }
 
 .mdiWindowTitle {
-	color    : #2A2D33;
-	fontSize : 12;
+	color        : #2A2D33;
+	fontSize     : 12;
+	paddingLeft  : 12;
+	paddingRight : 12;
 }
 
 .mdiWindowNoFocus {
@@ -801,29 +806,10 @@ flexlib|MDIWindow {
 	color    : #5E6C72;
 }
 
-.micSettingsWindowPlaySoundButtonStyle {
-	color             : #2A2D33;
-	textRollOverColor : #CDD4DB;
-	textSelectedColor : #CDD4DB;
-}
-
-.micSettingsWindowCancelButtonStyle, .inactivityWarningWindowCancelButtonStyle {
+.inactivityWarningWindowCancelButtonStyle {
 	color             : #CDD4DB;
 	textRollOverColor : #CDD4DB;
 	textSelectedColor : #CDD4DB;
-}
-
-.micSettingsWindowHelpButtonStyle {
-	paddingLeft       : 4;
-	paddingRight      : 4;
-	paddingTop        : 2;
-	paddingBottom     : 2;
-	fontSize          : 16;
-	rollOverColor     : #CDD4DB;
-	selectionColor    : #5E6C73;
-	textRollOverColor : #FFFFFF;
-	textSelectedColor : #FFFFFF;
-	fontWeight        : bold;
 }
 
 /*
@@ -850,7 +836,7 @@ mx|PopUpButton {
 	fillColorDisabled   : #F0F2F6;
 	borderColorUp       : #CDD4DB;
 	borderColorOver     : #1070D7;
-	borderColorDown     : #1070D7;
+	borderColorDown     : #0A5EAC;
 	borderColorDisabled : #CDD4DB;
 
 	/* Icon states */
@@ -891,7 +877,8 @@ mx|Panel {
 */
 
 presentation|UploadedPresentationRenderer {
-	iconSave : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Save_Disabled");
+	iconSave      : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Save_File");
+	iconSaveWhite : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Save_File_White");
 }
 
 .presentationWindowControlsStyle {
@@ -967,31 +954,48 @@ presentation|UploadedPresentationRenderer {
 	color : #2A2D33;
 }
 
-presentation|FileUploadWindow {
-	iconGo         : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Go");
-	titleStyleName : "presentationFileUploadWindowTitleStyle";
+.uploadFileButton {
+	fillColorUp       : #1070D7;
+	fillColorOver     : #0A5EAC;
+	fillColorDown     : #1070D7;
+	fillColorDisabled : #F0F2F6;
+	color             : #FFFFFF;
+	textRollOverColor : #FFFFFF;
+	textSelectedColor : #FFFFFF;
+	borderStyle       : none;
+	borderThickness   : 0;
 }
 
-.presentationFileUploadWindowTitleStyle, .presentationUploadTitleStyle {
-	fontSize   : 18;
-	fontWeight : bold;
+.uploadFileButton {
+	icon         : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Go");
+	disabledIcon : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Go_Disabled");
 }
 
-.presentationNamesLabelStyle {
-	fontSize   : 14;
-	fontWeight : bold;
+.presentationNameLabelOver {
+	color    : #FFFFFF;
+	fontSize : 14;
+}
+
+.presentationNameLabelUp {
+	color    : #05172A;
+	fontSize : 14;
 }
 
 .presentationUploadChooseFileButtonStyle {
 	color : #2A2D33;
 }
 
-.presentationUploadCancelButtonStyle {
+.presentationUploadShowButtonStyle {
 	color : #2A2D33;
 }
 
-.presentationUploadShowButtonStyle {
-	color : #2A2D33;
+
+.presentationDownloadShowButtonStyle {
+	/* Normal state */
+	borderStyle       : none;
+	borderThickness   : 0;
+	color             : #1070D7;
+	textDecoration    : underline;
 }
 
 .presentationUploadFileFormatHintBoxStyle, .audioBroswerHintBoxStyle {
@@ -1048,7 +1052,7 @@ mx|ProgressBar {
 */
 
 views|ReconnectionPopup {
-	iconRefresh : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Refreshing");
+	iconRefresh : Embed(source="assets/swf/refreshing.swf");
 }
 
 /*
@@ -1101,11 +1105,23 @@ sharednotes|SharedNotesRichTextEditor {
 */
 
 mx|TitleWindow {
-	borderColor          : #FFFFFF;
-	cornerRadius         : 4;
-	roundedBottomCorners : true;
-	dropShadowEnabled    : true;
-	shadowDistance       : 0;
+	closeButtonDisabledSkin : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Close_Button_Disabled");
+	closeButtonDownSkin     : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Close_Button_Down");
+	closeButtonOverSkin     : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Close_Button_Over");
+	closeButtonUpSkin       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_Close_Button_Up");
+	borderColor             : #FFFFFF;
+	cornerRadius            : 4;
+	roundedBottomCorners    : true;
+	dropShadowEnabled       : true;
+	shadowDistance          : 0;
+	borderThickness         : 1;
+	paddingTop              : 5;
+}
+
+.titleWindowStyle {
+	color     : #05172A;
+	fontSize  : 24;
+	textAlign : center;
 }
 
 /*
@@ -1134,11 +1150,13 @@ mx|ToolTip {
 */
 
 users|UsersWindow {
-	iconAudioMuted : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Audio_Muted");
-	iconAudio      : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Audio");
-	iconLock       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Lock");
-	iconMood       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Happy");
-	iconSettings   : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Settings");
+	iconAudioMuted  : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Audio_Muted");
+	iconAudio       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Audio");
+	iconLock        : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Lock");
+	iconMood        : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Happy");
+	iconSettings    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Settings");
+	iconClearStatus : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_ClearStatus");
+	iconRooms       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Rooms");
 }
 
 users|StatusItemRenderer {
@@ -1146,7 +1164,6 @@ users|StatusItemRenderer {
 	iconModerator      : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Moderator");
 	iconModeratorOnly  : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_ListenOnly");
 	iconMoodRaiseHand  : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_RaiseHand");
-	iconMood           : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Happy");
 	iconMoodHappy      : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Happy");
 	iconMoodNeutral    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Neutral");
 	iconMoodSad        : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Sad");
@@ -1168,7 +1185,7 @@ users|MediaItemRenderer {
 	iconDemote      : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Demote");
 	iconPromote     : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Promote");
 	iconEject       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Eject");
-	glowFilterColor : #B4201B;
+	glowFilterColor : #1070D7;
 }
 
 users|NameItemRenderer {
@@ -1209,21 +1226,16 @@ users|EmojiGrid {
 }
 
 users|MoodMenu {
-	iconMoodRaiseHand   : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_RaiseHand");
-	iconMoodApplause    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Applause");
-	iconMoodAgree       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_ThumbsUp");
-	iconMoodDisagree    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_ThumbsDown");
-	/* FIXME - start*/
-	iconMoodSpeakFaster : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Away");
-	iconMoodSpeakSlower : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Away");
-	iconMoodSpeakLouder : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Speak_Louder");
-	iconMoodSpeakSofter : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Away");
-	/* FIXME - end */
-	iconMoodBeRightBack : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Away");
-	iconMoodHappy       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Happy");
-	iconMoodClear       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Clear");
-	iconMoodNeutral     : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Neutral");
-	iconMoodConfused    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Confused");
+	iconMoodRaiseHand  : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_RaiseHand");
+	iconMoodApplause   : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Applause");
+	iconMoodThumbsUp   : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_ThumbsUp");
+	iconMoodThumbsDown : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_ThumbsDown");
+	iconMoodAway       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Away");
+	iconMoodHappy      : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Happy");
+	iconMoodSad        : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Neutral");
+	iconMoodNeutral    : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Sad");
+	iconMoodConfused   : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_Confused");
+	iconMoodNone       : Embed(source="assets/swf/v2_skin.swf", symbol="Icon_User_Mood_None");
 }
 
 /*

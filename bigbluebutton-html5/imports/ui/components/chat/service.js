@@ -1,10 +1,9 @@
 import Chats from '/imports/api/2.0/chat';
 import Users from '/imports/api/2.0/users';
-
 import Auth from '/imports/ui/services/auth';
 import UnreadMessages from '/imports/ui/services/unread-messages';
 import Storage from '/imports/ui/services/storage/session';
-
+import mapUser from '/imports/ui/services/user/mapUser';
 import { makeCall } from '/imports/ui/services/api';
 import _ from 'lodash';
 
@@ -22,26 +21,6 @@ const ScrollCollection = new Mongo.Collection(null);
 // session for closed chat list
 const CLOSED_CHAT_LIST_KEY = 'closedChatList';
 
-/* TODO: Same map is done in the user-list/service we should share this someway */
-
-const mapUser = user => ({
-  id: user.userid,
-  name: user.name,
-  emoji: {
-    status: user.emoji,
-    changedAt: user.set_emoji_time,
-  },
-  isPresenter: user.presenter,
-  isModerator: user.role === 'MODERATOR',
-  isCurrent: user.userid === Auth.userID,
-  isVoiceUser: user.voiceUser.joined,
-  isOnline: user.connection_status === 'online',
-  isMuted: user.voiceUser.muted,
-  isListenOnly: user.listenOnly,
-  isSharingWebcam: user.webcam_stream.length,
-  isLocked: user.locked,
-});
-
 const getUser = (userID) => {
   const user = Users.findOne({ userId: userID });
 
@@ -49,7 +28,7 @@ const getUser = (userID) => {
     return null;
   }
 
-  return mapUser(user.user);
+  return mapUser(user);
 };
 
 const mapMessage = (messagePayload) => {
@@ -101,17 +80,8 @@ const reduceMessages = (previous, current) => {
   return previous.concat(reducedMessages);
 };
 
-const getPublicMessages = () => {
-  const publicMessages = Chats.find({
-    'message.toUsername': { $in: [PUBLIC_CHAT_USERNAME, SYSTEM_CHAT_TYPE] },
-  }, {
-    sort: ['message.fromTime'],
-  }).fetch();
-
-  return publicMessages
-    .reduce(reduceMessages, [])
-    .map(mapMessage);
-};
+const reducedPublicMessages = publicMessages =>
+  (publicMessages.reduce(reduceMessages, []).map(mapMessage));
 
 const getPrivateMessages = (userID) => {
   const messages = Chats.find({
@@ -137,7 +107,7 @@ const isChatLocked = (receiverID) => {
   /* meeting.roomLockSettings || {
     disablePublicChat: false,
     disablePrivateChat: false,
-  };*/
+  }; */
 
   if (!currentUser.isLocked || currentUser.isPresenter) {
     return false;
@@ -210,6 +180,8 @@ const updateUnreadMessage = (receiverID, timestamp) => {
   return UnreadMessages.update(chatType, timestamp);
 };
 
+const clearPublicChatHistory = () => (makeCall('clearPublicChatHistory'));
+
 const closePrivateChat = (chatID) => {
   const currentClosedChats = Storage.getItem(CLOSED_CHAT_LIST_KEY) || [];
 
@@ -220,7 +192,41 @@ const closePrivateChat = (chatID) => {
   }
 };
 
+// We decode to prevent HTML5 escaped characters.
+const htmlDecode = (input) => {
+  const e = document.createElement('div');
+  e.innerHTML = input;
+  return e.childNodes[0].nodeValue;
+};
+
+const formatTime = time => (time <= 9 ? `0${time}` : time);
+
+// Export the chat as [Hour:Min] user : message
+const exportChat = messageList => (
+  messageList.map(({ message }) => {
+    const date = new Date(message.fromTime);
+    const hour = formatTime(date.getHours());
+    const min = formatTime(date.getMinutes());
+    const hourMin = `${hour}:${min}`;
+    if (message.fromUserId === SYSTEM_CHAT_TYPE) {
+      return `[${hourMin}] ${message.message}`;
+    }
+    return `[${hourMin}] ${message.fromUsername}: ${htmlDecode(message.message)}`;
+  }).join('\n')
+);
+
+const getPublicMessages = () => {
+  const publicMessages = Chats.find({
+    'message.toUsername': { $in: [PUBLIC_CHAT_USERNAME, SYSTEM_CHAT_TYPE] },
+  }, {
+    sort: ['message.fromTime'],
+  }).fetch();
+
+  return publicMessages;
+};
+
 export default {
+  reducedPublicMessages,
   getPublicMessages,
   getPrivateMessages,
   getUser,
@@ -232,4 +238,6 @@ export default {
   updateUnreadMessage,
   sendMessage,
   closePrivateChat,
+  exportChat,
+  clearPublicChatHistory,
 };

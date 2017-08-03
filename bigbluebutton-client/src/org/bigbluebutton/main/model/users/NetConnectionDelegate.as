@@ -143,6 +143,7 @@ package org.bigbluebutton.main.model.users
                   dispatcher.dispatchEvent(waitCommand);
                 } else {
                   LiveMeeting.inst().me.waitingForApproval = false;
+                  dispatcher.dispatchEvent(new TokenValidEvent());
                   sendConnectionSuccessEvent(userId);
                 }
             } else {
@@ -177,10 +178,6 @@ package org.bigbluebutton.main.model.users
           } else {
             LOGGER.debug("Ignoring message=[{0}] as our token hasn't been validated yet.", [messageName]);
           } 
-
-            //var tokenValid: Boolean = body.valid as Boolean;
-            //var userId: String = body.userId as String;
-            //trace("onMessageFromServer - " + tokenValid);
         }
 
         public function onMessageFromServer(messageName:String, msg:Object):void {

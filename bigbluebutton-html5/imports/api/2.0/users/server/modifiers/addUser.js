@@ -1,12 +1,25 @@
 import { check } from 'meteor/check';
 import Logger from '/imports/startup/server/logger';
 import Users from '/imports/api/2.0/users';
-
-import requestStunTurn from '../methods/requestStunTurn';
+import flat from 'flat';
+import addVoiceUser from '/imports/api/2.0/voice-users/server/modifiers/addVoiceUser';
 
 export default function addUser(meetingId, user) {
-  check(user, Object);
   check(meetingId, String);
+
+  check(user, {
+    intId: String,
+    extId: String,
+    name: String,
+    role: String,
+    guest: Boolean,
+    authed: Boolean,
+    waitingForAcceptance: Boolean,
+    emoji: String,
+    presenter: Boolean,
+    locked: Boolean,
+    avatar: String,
+  });
 
   const userId = user.intId;
   check(userId, String);
@@ -32,42 +45,38 @@ export default function addUser(meetingId, user) {
     user.role = ROLE_VIEWER;
   }
 
-  const userRoles = [];
-  userRoles.push('viewer');
-  userRoles.push(user.presenter ? 'presenter' : undefined);
-  userRoles.push(user.role === 'MODERATOR' ? 'moderator' : undefined);
+  let userRoles = [];
+
+  userRoles.push(
+    'viewer',
+    user.presenter ? 'presenter' : false,
+    user.role === 'MODERATOR' ? 'moderator' : false,
+  );
+
+  userRoles = userRoles.filter(Boolean);
 
   const modifier = {
-    $set: {
-      meetingId,
-      userId,
-      'user.connection_status': 'online',
-      'user.userid': userId,
-      'user.extId': user.extId,
-      'user.role': user.role,
-      'user.roles': userRoles,
-      'user.name': user.name,
-      'user._sort_name': user.name.trim().toLowerCase(),
-      'user.avatarURL': user.avatar,
-      'user.set_emoji_time': user.set_emoji_time || (new Date()).getTime(),
-      'user.joiningTime': (new Date()).getTime(),
-      'user.emoji': user.emoji,
-      'user.presenter': user.presenter,
-      'user.locked': user.locked,
-      'user.listenOnly': user.listenOnly,
-
-      // default values for voiceUser and webcam
-      'user.webcam_stream': [],
-      'user.voiceUser.web_userid': false,
-      'user.voiceUser.callernum': false,
-      'user.voiceUser.userid': false,
-      'user.voiceUser.talking': false,
-      'user.voiceUser.joined': false,
-      'user.voiceUser.callername': false,
-      'user.voiceUser.locked': false,
-      'user.voiceUser.muted': false,
-    },
+    $set: Object.assign(
+      { meetingId },
+      { connectionStatus: 'online' },
+      { roles: userRoles },
+      { sortName: user.name.trim().toLowerCase() },
+      flat(user),
+    ),
   };
+
+  addVoiceUser(meetingId, {
+    voiceUserId: '',
+    intId: userId,
+    callerName: user.name,
+    callerNum: '',
+    muted: false,
+    talking: false,
+    callingWith: '',
+    listenOnly: false,
+    voiceConf: '',
+    joined: false,
+  });
 
   const cb = (err, numChanged) => {
     if (err) {
@@ -82,9 +91,7 @@ export default function addUser(meetingId, user) {
       return Logger.info(`Added user id=${userId} meeting=${meetingId}`);
     }
 
-    if (numChanged) {
-      return Logger.info(`Upserted user id=${userId} meeting=${meetingId}`);
-    }
+    return Logger.info(`Upserted user id=${userId} meeting=${meetingId}`);
   };
 
   return Users.upsert(selector, modifier, cb);
