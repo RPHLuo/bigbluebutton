@@ -44,6 +44,9 @@ module.exports = class Screenshare {
     this._vw = vw;
     this._vh = vh;
     this._candidatesQueue = [];
+
+    this._viewerEndpoint = null;
+    this._viewerCandidatesQueue = [];
   }
 
   // TODO isolate ICE
@@ -57,6 +60,17 @@ module.exports = class Screenshare {
       this._candidatesQueue.push(candidate);
     }
   };
+  
+  _onViewerIceCandidate(_candidate) {
+    let candidate = kurento.getComplexType('IceCandidate')(_candidate);
+
+    if (this._viewerEndpoint) {
+      this._viewerEndpoint.addIceCandidate(candidate);
+    }
+    else {
+      this._viewerCandidatesQueue.push(candidate);
+    }
+  }
 
   _startViewer(ws, voiceBridge, sdp, presenterEndpoint, callback) {
     let self = this;
@@ -66,32 +80,29 @@ module.exports = class Screenshare {
     MediaController.createMediaElement(voiceBridge, C.WebRTC, function(error, webRtcEndpoint) {
       if (error) {
         console.log("Media elements error" + error);
-	ws.sendMessage("1");
         return _callback(error);
       }
+      self._viewerEndpoint = webRtcEndpoint;
+      
       // QUEUES UP ICE CANDIDATES IF NEGOTIATION IS NOT YET READY
-      while(self._candidatesQueue.length) {
-        let candidate = self._candidatesQueue.shift();
-        MediaController.addIceCandidate(webRtcEndpoint.id, candidate);
+      while(self._viewerCandidatesQueue.length) {
+        let candidate = self._viewerCandidatesQueue.shift();
+        MediaController.addIceCandidate(self._viewerEndpoint.id, candidate);
       }
       // CONNECTS TWO MEDIA ELEMENTS
-      MediaController.connectMediaElements(presenterEndpoint.id, webRtcEndpoint.id, C.VIDEO, function(error) {
+      MediaController.connectMediaElements(presenterEndpoint.id, self._viewerEndpoint.id, C.VIDEO, function(error) {
         if (error) {
           console.log("Media elements CONNECT error " + error);
           //pipeline.release();
-	  ws.sendMessage("2");
           return _callback(error);
         }
       });
 
-      self._webRtcEndpoint = webRtcEndpoint
-
       // ICE NEGOTIATION WITH THE ENDPOINT
-      self._webRtcEndpoint.on('OnIceCandidate', function(event) {
+      self._viewerEndpoint.on('OnIceCandidate', function(event) {
         let candidate = kurento.getComplexType('IceCandidate')(event.candidate);
-        ws.sendMessage({ id : 'iceCandidate', cameraId: id, candidate : candidate });
+        ws.sendMessage({ id : 'iceCandidate', candidate : candidate });
       });
-
 
       sdp = h264_sdp.transform(sdp);
       // PROCESS A SDP OFFER
@@ -102,16 +113,23 @@ module.exports = class Screenshare {
           return _callback(error);
         }
         ws.sendMessage({id: "sdp", sdp: webRtcSdpAnswer});
+
+        MediaController.gatherCandidates(webRtcEndpoint.id, function(error) {
+          if (error) {
+            return _callback(error);
+          }
+
+	  self._viewerEndpoint.on('MediaFlowInStateChange', function(event) {
+            if (event.state === 'NOT_FLOWING') {                          
+              console.log(" NOT FLOWING ");                              
+            }                                                             
+            else if (event.state === 'FLOWING') {                         
+              console.log(" FLOWING ");      
+            }                                                             
+          });
+        });
       });
-      webRtcEndpoint.on('MediaFlowInStateChange', function(event) {
-        if (event.state === 'NOT_FLOWING') {                          
-          console.log(" NOT FLOWING ");                              
-        }                                                             
-        else if (event.state === 'FLOWING') {                         
-          console.log(" FLOWING ");      
-        }                                                             
-      }); 
-    });    
+    });
   }
 
 

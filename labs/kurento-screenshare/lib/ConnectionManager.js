@@ -196,9 +196,14 @@ module.exports = class ConnectionManager {
             }
           }
           break;
-
-
-
+	case 'viewerIceCandidate':
+	  console.log(" Session output => " + session);
+	  if(session) {
+	    session._onViewerIceCandidate(message.candidate);
+	  }else {
+	    console.log("[iceCandidate] Why is there no session on ICE CANDIDATE?");
+	  }
+	  break;
         default:
           webSocket.sendMessage({ id : 'error', message : 'Invalid message ' + message });
           break;
@@ -209,10 +214,8 @@ module.exports = class ConnectionManager {
   _stopSession(sessionId) {
     console.log(' [>] Stopping session ' + sessionId);
     let session = this._screenshareSessions[sessionId];
-    if(typeof session!== 'undefined') {
-      if(typeof session._stop === 'function') {
-        session._stop();
-      }
+    if(typeof session !== 'undefined' && typeof session._stop === 'function') {
+      session._stop();
     }
 
     delete this._screenshareSessions[sessionId];
